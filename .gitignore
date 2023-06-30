@@ -5,7 +5,8 @@ secondbrain/
 toto.txt
 *.ipynb
 log.txt
-
+backend/.env
+frontend/.env
 
 
 

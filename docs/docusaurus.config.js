@@ -11,14 +11,14 @@ const config = {
   favicon: 'img/quivr-logo.ico',
 
   // Set the production url of your site here
-  url: 'https://brain.quivr.app',
+  url: 'https://brain.chatdoctor.online/',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'stangirard', // Usually your GitHub org/user name.
+  organizationName: 'masapasa', // Usually your GitHub org/user name.
   projectName: 'quivr', // Usually your repo name.
 
   onBrokenLinks: 'throw',
@@ -42,14 +42,14 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/StanGirard/quivr/tree/main/docs/',
+            'https://github.com/masapasa/quivr/tree/main/docs/',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/StanGirard/quivr/tree/main/docs/',
+            'https://github.com/masapasa/quivr/tree/main/docs/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -62,12 +62,12 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       // Replace with your project's social card
-      image: 'img/logo.png',
+      image: 'img/nubri.png',
       navbar: {
-        title: 'Quivr',
+        title: 'Nubri',
         logo: {
-          alt: 'Quivr logo',
-          src: 'img/logo.png',
+          alt: 'Nubri logo',
+          src: 'img/nubri.png',
         },
         items: [
           {
@@ -76,12 +76,12 @@ const config = {
             position: 'left',
           },
           {
-            href: 'https://quivr.app',
+            href: 'http://chatdoctor.online',
             position: 'right',
             label: 'Try me now',
           },
           {
-            href: 'https://github.com/stangirard/Quivr',
+            href: 'https://github.com/masapasa/Quivr',
             label: 'Star us on GitHub',
             position: 'right',
           },
@@ -108,7 +108,7 @@ const config = {
               },
               {
                 label: 'Twitter',
-                href: 'https://twitter.com/quivr_brain',
+                href: 'https://twitter.com/aswinpy',
               },
             ],
           },
@@ -121,7 +121,7 @@ const config = {
               },
               {
                 label: 'GitHub',
-                href: 'https://github.com/StangGirard/Quivr',
+                href: 'https://github.com/masapasa/Quivr',
               },
             ],
           },
