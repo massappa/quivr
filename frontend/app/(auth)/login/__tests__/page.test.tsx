@@ -3,15 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Login from "../page";
 
-const mockUseSearchParams = vi.fn(() => ({
-  get: vi.fn(),
-}));
-
 const mockRedirect = vi.fn((url: string) => ({ url }));
 
 vi.mock("next/navigation", () => ({
   redirect: (url: string) => mockRedirect(url),
-  useSearchParams: () => mockUseSearchParams(),
 }));
 
 const mockUseSupabase = vi.fn(() => ({
@@ -24,7 +19,7 @@ vi.mock("@/lib/context/SupabaseProvider", () => ({
   useSupabase: () => mockUseSupabase(),
 }));
 
-vi.mock("@/services/analytics/useEventTracking", () => ({
+vi.mock("@/services/analytics/june/useEventTracking", () => ({
   useEventTracking: () => ({ track: vi.fn() }),
 }));
 
@@ -36,17 +31,35 @@ describe("Login component", () => {
   it("redirects to /upload if user is already signed in and is not coming from another page", () => {
     render(<Login />);
     expect(mockRedirect).toHaveBeenCalledTimes(1);
-    expect(mockRedirect).toHaveBeenCalledWith("/upload");
+    expect(mockRedirect).toHaveBeenCalledWith("/chat");
   });
 
   it('redirects to "/previous-page" if user is already signed in and previous page is set', () => {
-    const previousPageUrl = "/my-interesting-page";
-    mockUseSearchParams.mockReturnValue({
-      get: vi.fn(() => previousPageUrl),
+    const currentPage = "/my-awesome-page";
+
+    Object.defineProperty(window, "location", {
+      value: { pathname: currentPage },
     });
+
+    const sessionStorageData: Record<string, string> = {
+      "previous-page": currentPage,
+    };
+
+    const sessionStorageMock = {
+      getItem: vi.fn((key: string) => sessionStorageData[key]),
+      setItem: vi.fn(
+        (key: string, value: string) => (sessionStorageData[key] = value)
+      ),
+      removeItem: vi.fn((key: string) => delete sessionStorageData[key]),
+    };
+
+    Object.defineProperty(window, "sessionStorage", {
+      value: sessionStorageMock,
+    });
+
     render(<Login />);
     expect(mockRedirect).toHaveBeenCalledTimes(1);
-    expect(mockRedirect).toHaveBeenCalledWith(previousPageUrl);
+    expect(mockRedirect).toHaveBeenCalledWith(currentPage);
   });
 
   it("should render the login form when user is not signed in", () => {

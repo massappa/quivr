@@ -1,14 +1,12 @@
-from datetime import datetime
 from secrets import token_hex
 from typing import List
 from uuid import uuid4
 
 from asyncpg.exceptions import UniqueViolationError
-from auth.auth_bearer import AuthBearer, get_current_user
+from auth import AuthBearer, get_current_user
 from fastapi import APIRouter, Depends
 from logger import get_logger
-from models.settings import CommonsDep
-from models.users import User
+from models import UserIdentity, get_supabase_db
 from pydantic import BaseModel
 
 logger = get_logger(__name__)
@@ -21,6 +19,7 @@ class ApiKeyInfo(BaseModel):
 
 class ApiKey(BaseModel):
     api_key: str
+    key_id: str
 
 
 api_key_router = APIRouter()
@@ -32,9 +31,7 @@ api_key_router = APIRouter()
     dependencies=[Depends(AuthBearer())],
     tags=["API Key"],
 )
-async def create_api_key(
-    commons: CommonsDep, current_user: User = Depends(get_current_user)
-):
+async def create_api_key(current_user: UserIdentity = Depends(get_current_user)):
     """
     Create new API key for the current user.
 
@@ -45,37 +42,33 @@ async def create_api_key(
     the user. It returns the newly created API key.
     """
 
-    new_key_id = str(uuid4())
+    new_key_id = uuid4()
     new_api_key = token_hex(16)
     api_key_inserted = False
+    supabase_db = get_supabase_db()
 
     while not api_key_inserted:
         try:
             # Attempt to insert new API key into database
-            commons['supabase'].table('api_keys').insert([{
-                "key_id": new_key_id,
-                "user_id": current_user.id,
-                "api_key": new_api_key,
-                "creation_time": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-                "is_active": True
-            }]).execute()
-
+            supabase_db.create_api_key(new_key_id, new_api_key, current_user.id)
             api_key_inserted = True
 
         except UniqueViolationError:
             # Generate a new API key if the current one is already in use
             new_api_key = token_hex(16)
-
+        except Exception as e:
+            logger.error(f"Error creating new API key: {e}")
+            return {"api_key": "Error creating new API key."}
     logger.info(f"Created new API key for user {current_user.email}.")
 
-    return {"api_key": new_api_key}
+    return {"api_key": new_api_key, "key_id": str(new_key_id)}
 
 
 @api_key_router.delete(
     "/api-key/{key_id}", dependencies=[Depends(AuthBearer())], tags=["API Key"]
 )
 async def delete_api_key(
-    key_id: str, commons: CommonsDep, current_user: User = Depends(get_current_user)
+    key_id: str, current_user: UserIdentity = Depends(get_current_user)
 ):
     """
     Delete (deactivate) an API key for the current user.
@@ -86,11 +79,8 @@ async def delete_api_key(
     as inactive in the database.
 
     """
-
-    commons['supabase'].table('api_keys').update({
-        "is_active": False,
-        "deleted_time": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    }).match({"key_id": key_id, "user_id": current_user.id}).execute()
+    supabase_db = get_supabase_db()
+    supabase_db.delete_api_key(key_id, current_user.id)
 
     return {"message": "API key deleted."}
 
@@ -101,9 +91,7 @@ async def delete_api_key(
     dependencies=[Depends(AuthBearer())],
     tags=["API Key"],
 )
-async def get_api_keys(
-    commons: CommonsDep, current_user: User = Depends(get_current_user)
-):
+async def get_api_keys(current_user: UserIdentity = Depends(get_current_user)):
     """
     Get all active API keys for the current user.
 
@@ -113,6 +101,6 @@ async def get_api_keys(
     This endpoint retrieves all the active API keys associated with the current user. It returns a list of API key objects
     containing the key ID and creation time for each API key.
     """
-
-    response = commons['supabase'].table('api_keys').select("key_id, creation_time").filter('user_id', 'eq', current_user.id).filter('is_active', 'eq', True).execute()
+    supabase_db = get_supabase_db()
+    response = supabase_db.get_user_api_keys(current_user.id)
     return response.data

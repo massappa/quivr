@@ -1,3 +1,4 @@
+docker-compose.override.yml
 secondbrain/
 .env
 .streamlit/secrets.toml
@@ -5,8 +6,10 @@ secondbrain/
 toto.txt
 *.ipynb
 log.txt
+
+backend/venv
 backend/.env
-frontend/.env
+backend/*.deb
 
 
 
@@ -49,9 +52,14 @@ quivr/*
 streamlit-demo/.streamlit/secrets.toml
 .backend_env
 .frontend_env
-backend/pandoc-*
+backend/core/pandoc-*
 **/.pandoc-*
-backend/application_default_credentials.json
+backend/core/application_default_credentials.json
 
 #local models
-backend/local_models/*
+backend/core/local_models/*
+
+
+## scripts
+.migration_info
+package-lock.json

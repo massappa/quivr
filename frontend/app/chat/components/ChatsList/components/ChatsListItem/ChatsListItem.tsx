@@ -1,58 +1,36 @@
-import { UUID } from "crypto";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { FiEdit, FiSave, FiTrash2 } from "react-icons/fi";
 import { MdChatBubbleOutline } from "react-icons/md";
 
 import { ChatEntity } from "@/app/chat/[chatId]/types";
-import { useAxios, useToast } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 
 import { ChatName } from "./components/ChatName";
+import { useChatsListItem } from "./hooks/useChatsListItem";
 
 interface ChatsListItemProps {
   chat: ChatEntity;
-  deleteChat: (id: UUID) => void;
 }
 
-export const ChatsListItem = ({
-  chat,
-  deleteChat,
-}: ChatsListItemProps): JSX.Element => {
-  const pathname = usePathname()?.split("/").at(-1);
-  const selected = chat.chat_id === pathname;
-  const [chatName, setChatName] = useState(chat.chat_name);
-  const { axiosInstance } = useAxios();
-  const { publish } = useToast();
-  const [editingName, setEditingName] = useState(false);
-
-  const updateChatName = async () => {
-    if (chatName !== chat.chat_name) {
-      await axiosInstance.put<ChatEntity>(`/chat/${chat.chat_id}/metadata`, {
-        chat_name: chatName,
-      });
-      publish({ text: "Chat name updated", variant: "success" });
-    }
-  };
-
-  const handleEditNameClick = () => {
-    if (editingName) {
-      setEditingName(false);
-      void updateChatName();
-    } else {
-      setEditingName(true);
-    }
-  };
+export const ChatsListItem = ({ chat }: ChatsListItemProps): JSX.Element => {
+  const {
+    setChatName,
+    deleteChat,
+    handleEditNameClick,
+    selected,
+    chatName,
+    editingName,
+  } = useChatsListItem(chat);
 
   return (
     <div
       className={cn(
-        "w-full border-b border-black/10 dark:border-white/25 last:border-none relative group flex overflow-x-hidden hover:bg-gray-100 dark:hover:bg-gray-800",
+        "w-full relative group flex overflow-x-hidden hover:bg-gray-100 dark:hover:bg-gray-800",
         selected
           ? "bg-gray-100 dark:bg-gray-800 text-primary dark:text-white"
           : ""
       )}
+      data-testid="chats-list-item"
     >
       <Link
         className="flex flex-col flex-1 min-w-0 p-4"
@@ -67,18 +45,19 @@ export const ChatsListItem = ({
             name={chatName}
           />
         </div>
-        <div className="grid-cols-2 text-xs opacity-50 whitespace-nowrap">
-          {chat.chat_id}
-        </div>
       </Link>
-      <div className="opacity-0 group-hover:opacity-100 flex items-center justify-center hover:text-red-700 bg-gradient-to-l from-white dark:from-black to-transparent z-10 transition-opacity">
-        <button className="p-0" type="button" onClick={handleEditNameClick}>
+      <div className="opacity-0 group-hover:opacity-100 flex items-center justify-center bg-gradient-to-l from-white dark:from-black to-transparent z-10 transition-opacity">
+        <button
+          className="p-0 hover:text-blue-700"
+          type="button"
+          onClick={handleEditNameClick}
+        >
           {editingName ? <FiSave /> : <FiEdit />}
         </button>
         <button
-          className="p-5"
+          className="p-5 hover:text-red-700"
           type="button"
-          onClick={() => deleteChat(chat.chat_id)}
+          onClick={() => void deleteChat()}
         >
           <FiTrash2 />
         </button>

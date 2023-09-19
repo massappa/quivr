@@ -1,52 +1,22 @@
 /* eslint-disable */
 "use client";
 import Link from "next/link";
-import { useState } from "react";
 
 import Button from "@/lib/components/ui/Button";
 import Card from "@/lib/components/ui/Card";
 import Field from "@/lib/components/ui/Field";
 import PageHeading from "@/lib/components/ui/PageHeading";
-import { useSupabase } from "@/lib/context/SupabaseProvider";
-import { useToast } from "@/lib/hooks/useToast";
-import { useEventTracking } from "@/services/analytics/useEventTracking";
+import { useSignUp } from "./hooks/useSignUp";
+import { useTranslation } from "react-i18next";
 
 export default function SignUp() {
-  const { supabase } = useSupabase();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isPending, setIsPending] = useState(false);
-  const { track } = useEventTracking();
-
-
-  const { publish } = useToast();
-  const handleSignUp = async () => {
-    void track("SIGNUP")
-    setIsPending(true);
-    const { data, error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-    });
-
-    if (error) {
-      console.error("Error signing up:", error.message);
-      publish({
-        variant: "danger",
-        text: `Error signing up: ${error.message}`,
-      });
-    } else if (data) {
-      publish({
-        variant: "success",
-        text: "Confirmation Email sent, please check your email",
-      });
-    }
-    setIsPending(false);
-  };
-
+  const { handleSignUp, isPending, email, password, setEmail, setPassword } =
+    useSignUp();
+  const {t} = useTranslation(["translation","signUp"]);
   return (
-    <main>
+    <main data-testid="sign-up-page">
       <section className="min-h-[80vh] w-full h-full outline-none flex flex-col gap-5 items-center justify-center p-6">
-        <PageHeading title="Sign Up" subtitle="Create your account" />
+        <PageHeading title={t("title",{ ns: 'signUp' })} subtitle={t("subtitle",{ ns: 'signUp' })} />
         <Card className="max-w-md w-full p-5 sm:p-10 text-left">
           <form
             onSubmit={(e) => {
@@ -54,13 +24,16 @@ export default function SignUp() {
               handleSignUp();
             }}
             className="flex flex-col gap-2"
+            data-testid="sign-up-form"
           >
             <Field
               name="email"
               required
               type="email"
-              placeholder="Email"
+              placeholder={t("email")}
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
+              data-testid="email-field"
             />
             <Field
               name="password"
@@ -68,11 +41,14 @@ export default function SignUp() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
+              placeholder={t("password")}
+              data-testid="password-field"
             />
             <div className="flex flex-col items-center justify-center mt-2 gap-2">
-              <Button isLoading={isPending}>Sign Up</Button>
-              <Link href="/login">Already registered? Sign in</Link>
+              <Button data-testid="sign-up-button" isLoading={isPending}>
+              {t("signUpButton",{ ns: 'signUp' })}
+              </Button>
+              <Link href="/login">{t("login",{ ns: 'signUp' })}</Link>
             </div>
           </form>
         </Card>

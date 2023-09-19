@@ -1,18 +1,34 @@
-FROM python:3.11-bullseye
+# Using a slim version for a smaller base image
+FROM python:3.11-slim-bullseye
 
-# Install GEOS library
-RUN apt-get update && apt-get install -y libgeos-dev
+# Install GEOS library, Rust, and other dependencies, then clean up
+RUN apt-get update && apt-get install -y \
+    libgeos-dev \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    pandoc \
+    binutils \
+    curl \
+    git \
+    build-essential && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    rm -rf /var/lib/apt/lists/* && apt-get clean
+
+# Add Rust binaries to the PATH
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /code
 
-COPY ./requirements.txt /code/requirements.txt
+# Copy just the requirements first
+COPY ./requirements.txt .
 
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt --timeout 100
+# Upgrade pip
+RUN pip install --upgrade pip
 
-#You may need to run `chmod +x ./backend/scripts/start.sh` on your host machine if you get a permission error
-COPY ./scripts/start.sh /code/scripts/start.sh
-RUN chmod +x /code/scripts/start.sh
+# Increase timeout to wait for the new installation
+RUN pip install --no-cache-dir -r requirements.txt --timeout 200
 
-COPY . /code/
+# Copy the rest of the application
+COPY . .
 
-ENTRYPOINT ["/code/scripts/start.sh"]
+CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "5050", "--workers", "6"]

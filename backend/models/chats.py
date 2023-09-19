@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 
 class ChatMessage(BaseModel):
-    model: str = "gpt-3.5-turbo-16k"
+    model: str
     question: str
     # A list of tuples where each tuple is (speaker, text)
     history: List[Tuple[str, str]]
@@ -17,7 +17,9 @@ class ChatMessage(BaseModel):
 
 
 class ChatQuestion(BaseModel):
-    model: str = "gpt-3.5-turbo-0613"
     question: str
-    temperature: float = 0.0
-    max_tokens: int = 256
+    model: Optional[str]
+    temperature: Optional[float]
+    max_tokens: Optional[int]
+    brain_id: Optional[UUID]
+    prompt_id: Optional[UUID]

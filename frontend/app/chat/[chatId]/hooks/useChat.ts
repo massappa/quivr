@@ -1,91 +1,94 @@
 /* eslint-disable max-lines */
 import { AxiosError } from "axios";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import { useBrainConfig } from "@/lib/context/BrainConfigProvider/hooks/useBrainConfig";
+import { getChatConfigFromLocalStorage } from "@/lib/api/chat/chat.local";
+import { useChatApi } from "@/lib/api/chat/useChatApi";
+import { useChatContext } from "@/lib/context";
+import { useBrainContext } from "@/lib/context/BrainProvider/hooks/useBrainContext";
 import { useToast } from "@/lib/hooks";
-import { useEventTracking } from "@/services/analytics/useEventTracking";
+import { useEventTracking } from "@/services/analytics/june/useEventTracking";
 
-import { useChatService } from "./useChatService";
-import { useChatContext } from "../context/ChatContext";
+import { useQuestion } from "./useQuestion";
 import { ChatQuestion } from "../types";
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const useChat = () => {
   const { track } = useEventTracking();
+
   const params = useParams();
   const [chatId, setChatId] = useState<string | undefined>(
     params?.chatId as string | undefined
   );
   const [generatingAnswer, setGeneratingAnswer] = useState(false);
-  const {
-    config: { maxTokens, model, temperature },
-  } = useBrainConfig();
-  const { history, setHistory } = useChatContext();
+  const router = useRouter();
+  const { messages } = useChatContext();
+  const { currentBrain, currentPromptId, currentBrainId } = useBrainContext();
   const { publish } = useToast();
+  const { createChat } = useChatApi();
 
-  const {
-    createChat,
-    getChatHistory,
-    addStreamQuestion,
-    addQuestion: addQuestionToModel,
-  } = useChatService();
-
-  useEffect(() => {
-    const fetchHistory = async () => {
-      const currentChatId = chatId;
-      const chatHistory = await getChatHistory(currentChatId);
-
-      if (chatId === currentChatId && chatHistory.length > 0) {
-        setHistory(chatHistory);
-      }
-    };
-    void fetchHistory();
-  }, [chatId, getChatHistory, setHistory]);
-
-  const generateNewChatIdFromName = async (
-    chatName: string
-  ): Promise<string> => {
-    const chat = await createChat({ name: chatName });
-
-    return chat.chat_id;
-  };
+  const { addStreamQuestion } = useQuestion();
+  const { t } = useTranslation(["chat"]);
 
   const addQuestion = async (question: string, callback?: () => void) => {
-    const chatQuestion: ChatQuestion = {
-      model,
-      question,
-      temperature,
-      max_tokens: maxTokens,
-    };
+    if (question === "") {
+      publish({
+        variant: "danger",
+        text: t("ask"),
+      });
+
+      return;
+    }
 
     try {
-      void track("QUESTION_ASKED");
       setGeneratingAnswer(true);
-      const currentChatId =
-        chatId ??
-        // if chatId is undefined, we need to create a new chat on fly
-        (await generateNewChatIdFromName(
-          question.split(" ").slice(0, 3).join(" ")
-        ));
 
-      setChatId(currentChatId);
+      let currentChatId = chatId;
 
-      if (chatQuestion.model === "gpt-3.5-turbo") {
-        await addStreamQuestion(currentChatId, chatQuestion);
-      } else {
-        await addQuestionToModel(currentChatId, chatQuestion);
+      let shouldUpdateUrl = false;
+
+      //if chatId is not set, create a new chat. Chat name is from the first question
+      if (currentChatId === undefined) {
+        const chatName = question.split(" ").slice(0, 3).join(" ");
+        const chat = await createChat(chatName);
+        currentChatId = chat.chat_id;
+        setChatId(currentChatId);
+        shouldUpdateUrl = true;
+        //TODO: update chat list here
       }
 
+      void track("QUESTION_ASKED", {
+        brainId: currentBrainId,
+        promptId: currentPromptId,
+      });
+
+      const chatConfig = getChatConfigFromLocalStorage(currentChatId);
+
+      const chatQuestion: ChatQuestion = {
+        model: chatConfig?.model,
+        question,
+        temperature: chatConfig?.temperature,
+        max_tokens: chatConfig?.maxTokens,
+        brain_id: currentBrain?.id,
+        prompt_id: currentPromptId ?? undefined,
+      };
+
+      await addStreamQuestion(currentChatId, chatQuestion);
+
       callback?.();
+
+      if (shouldUpdateUrl) {
+        router.replace(`/chat/${currentChatId}`);
+      }
     } catch (error) {
       console.error({ error });
 
       if ((error as AxiosError).response?.status === 429) {
         publish({
           variant: "danger",
-          text: "You have reached the limit of requests, please try again later",
+          text: t("limit_reached", { ns: "chat" }),
         });
 
         return;
@@ -93,7 +96,7 @@ export const useChat = () => {
 
       publish({
         variant: "danger",
-        text: "Error occurred while getting answer",
+        text: t("error_occurred", { ns: "chat" }),
       });
     } finally {
       setGeneratingAnswer(false);
@@ -101,8 +104,9 @@ export const useChat = () => {
   };
 
   return {
-    history,
+    messages,
     addQuestion,
     generatingAnswer,
+    chatId,
   };
 };

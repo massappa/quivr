@@ -1,28 +1,23 @@
-/* eslint-disable */
 "use client";
 
-import PageHeading from "@/lib/components/ui/PageHeading";
+import { ActionsBar } from "./components/ActionsBar";
+import { ChatDialogueArea } from "./components/ChatDialogueArea/ChatDialogue";
+import { ChatHeader } from "./components/ChatHeader";
 
-import { ChatInput, ChatMessages } from "../components";
-import { ChatProvider } from "./context/ChatContext";
-
-export default function ChatPage() {
+const SelectedChatPage = (): JSX.Element => {
   return (
-    <main className="flex flex-col w-full pt-10">
-      <section className="flex flex-col flex-1 items-center w-full h-full min-h-screen">
-        <PageHeading
-          title="Chat with your brain"
-          subtitle="Talk to a language model about your uploaded data"
-        />
-        <ChatProvider>
-          <div className="relative w-full flex flex-col flex-1 items-center">
-            <div className="flex-1 w-full flex flex-col items-center">
-              <ChatMessages />
+    <main className="flex flex-col w-full h-[calc(100vh-61px)] overflow-hidden" data-testid="chat-page">
+    <section className="flex flex-col flex-1 items-center w-full h-full overflow-y-auto">
+        <ChatHeader /> {/* Added margin-bottom */}
+        <div className="flex-1 flex flex-col mt-4 md:mt-8 w-full shadow-md dark:shadow-primary/25 hover:shadow-xl transition-shadow rounded-xl overflow-hidden bg-white dark:bg-black border border-black/10 dark:border-white/25 p-2 md:p-12 pt-4 md:pt-10">
+            <div className="flex flex-1 flex-col overflow-y-auto">
+                <ChatDialogueArea />
             </div>
-            <ChatInput />
-          </div>
-        </ChatProvider>
-      </section>
-    </main>
+            <ActionsBar/> {/* Added margin-top */}
+        </div>
+    </section>
+  </main>
   );
-}
+};
+
+export default SelectedChatPage;

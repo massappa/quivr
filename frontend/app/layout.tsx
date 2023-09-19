@@ -1,15 +1,14 @@
 import { createServerComponentSupabaseClient } from "@supabase/auth-helpers-nextjs";
-import { Analytics } from "@vercel/analytics/react";
+import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
 import { Inter } from "next/font/google";
 import { cookies, headers } from "next/headers";
 
-import Footer from "@/lib/components/Footer";
-import { NavBar } from "@/lib/components/NavBar";
-import { TrackingWrapper } from "@/lib/components/TrackingWrapper";
 import { ToastProvider } from "@/lib/components/ui/Toast";
-import { BrainProvider, FeatureFlagsProvider } from "@/lib/context";
-import { BrainConfigProvider } from "@/lib/context/BrainConfigProvider/brain-config-provider";
+import { FeatureFlagsProvider } from "@/lib/context";
+import { BrainProvider } from "@/lib/context/BrainProvider";
 import { SupabaseProvider } from "@/lib/context/SupabaseProvider";
+
+import { App } from "./App";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -42,17 +41,14 @@ const RootLayout = async ({
         <FeatureFlagsProvider>
           <ToastProvider>
             <SupabaseProvider session={session}>
-              <BrainConfigProvider>
-                <BrainProvider>
-                  <TrackingWrapper />
-                  <NavBar />
+              <BrainProvider>
+                <App>
                   <div className="flex-1">{children}</div>
-                  <Footer />
-                </BrainProvider>
-              </BrainConfigProvider>
+                </App>
+              </BrainProvider>
             </SupabaseProvider>
           </ToastProvider>
-          <Analytics />
+          <VercelAnalytics />
         </FeatureFlagsProvider>
       </body>
     </html>

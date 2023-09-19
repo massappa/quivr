@@ -1,6 +1,6 @@
 export type RequestStat = {
   date: string;
-  requests_count: number;
+  daily_requests_count: number;
   user_id: string;
 };
 
@@ -11,4 +11,5 @@ export interface UserStats {
   max_requests_number: number;
   requests_stats: RequestStat[];
   date: string;
+  models: string[];
 }
